@@ -1,0 +1,206 @@
+//+------------------------------------------------------------------+
+//|                                                      EURUSD1.mq4 |
+//|                        Copyright 2018, MetaQuotes Software Corp. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
+/*
+货币对：EUR/USD
+时间周期：M30
+技术指标：鳄鱼三线 8,5,3
+          趋势指标+震荡指标
+开仓条件：买入条件  鳄鱼三线成顺序
+          用Force指标过滤盘整行情
+平仓条件：鳄鱼线交叉
+*/
+
+#property copyright "Copyright 2018, MetaQuotes Software Corp."
+#property link      "https://www.mql5.com"
+#property version   "1.00"
+#property strict
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+
+//定义输入参数,extern 命令
+extern int StopLoss =40;      //止损
+extern int TakeProfit = 0;     //止盈
+extern double MaxRisk = 30;     //资金风险 1 = 1%
+extern double Filter = 0.35;     // Force 指标过滤参数
+double Alligator_jaw,Alligator_lips,Envelops21_uper,Evenlop21_lowwer,Force); //全局变量
+
+int OnInit()              //初始化
+  {
+//--- create timer
+   EventSetTimer(60); //指定时间周期
+      
+//---
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)   //结束程序运行
+  {
+//--- destroy timer
+   EventKillTimer();    //通过当前图表中的计时器停止事件的生成
+      
+  }
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+//---
+   OrderSelect(0,SELECT_BY_POS);  //选当前订单。bool  OrderSelect(int index,int select,int pool=MODE_TRADES}
+   //显示市场信息
+   SetLable("时间栏","星期"+DayOfWeek()+" 市场时间: "+Year()+"-"+Month()+"-"+Day()
+            +" "+Hour()+":"+Minute()+":"+Seconds(),200,0,9,"Verdana",Red);
+   SetLable("信息栏","市场信号："+ReturnMarketInformation()+
+            "  当前订单盈利："+DoubleToStr(OrderProfit(),2),5,20,10,"Verdana",Blue);
+            
+   //周五二十点停止交易，盈利订单平仓
+   if(DayOfWeek() == 5 &&Hour() >= 20 &&Minute() >= 0)  //DayOfWeek返回指定日期的从零开始的星期几（0表示星期日，1,2,3,4,5,6）。
+   {
+      if(OrderProfit()>0 OrderClose(OrderTicket(),OrderLosts,Ask,0);     //OrderProfit返回当前所选订单的利润,
+      return(0);  
+      // OrderTicket返回当前所选订单的票号。OrderClose关闭已下订单（订单号，手数，价格，滑损，颜色）。
+      
+      //新开仓订单时间不足一个时间周期，不做任何操作返回
+      //if(TimerCurrent()-OrderOpenTime（）<=PERIOD_M30*60)return(0);
+            //TimerCurrent最后一次报价接收的时间,OrderOpenTime返回当前所选订单的开仓时间
+      double sl_buy=Ask-StopLoss*Point;       //Point当前货币的点数，Ask卖家出价,Bid买家出价
+      double tp_buy=Ask+TakeProfit*Point;
+      double sl_sell=Bid+StopLoss*Point;
+      double tp_sell=Bid+TakeProfit*Point;
+      if(TakeProfit==0){sl_buy=0,sl_sell=0;}
+      if(StopLoss==0) {tp_buy=0,tp_sell=0;}
+      
+      //开仓操作，EURUSD货币对，没有订单，则开仓,OrderSend开单或挂单
+      if(Symbol()=="EURUSD"&&OrdersTotal()==0)//OrdersTotal返回市场和挂单的数量
+      {
+         if(ReturnMarketsInformation()=="Buy")
+            OrderSend(Symbol(),OP_BUY,LotsOptimized(MaxRisk),Ask,0,sL_buy,tp_buy);
+         if(ReturnMarketInformation()=="Sell")
+            OrderSend(Symbol(),OP_SELL,LotsOptimized(MaxRisk),Bid,0,sl_sell,tp_sell);
+      }
+      
+      //止盈操作
+      if(OrderProfit()>0)
+      {
+         if(Symbol()=="EURUSD" && OrdersTotal()==1 && OrderType()==OP_BUY && ReturnMarketInformation()=="DownCross")
+            OrderClose(OrderTicket(),OrderLots(),Bid,0);
+      if(Symbol()=="EURUSD" && OrdersTotal()==1 && OrderType()==OP_SELL && ReturnMarketInformation()=="UpCross")
+            OrderClose(OrderTicket(),OrderLots(),Ask,0);
+      }
+      
+      //止损操作
+      if(OrderProfit()<0)
+      {
+         if(Symbol()=="EURUSD" && OrdersTotal()==1 && OrderType()== OP_BUY && Alligator_lips<Alligator_jaw)
+            OrderClose(OrderTicket(),OrderLots(),Ask,0);
+         if(Symbol()=="EURUSD" && OrdersTotal()==1 && OrderType()==OP_SELL && Alligator_lips>Alligator_jaw)
+         OrderClose(OrderTicket(),OrderLots(),Bid,0);
+      }
+      
+      //移动止损
+      //OrderModify修改先前开立或挂单的特征
+      //OrderTakeProfit返回当前所选订单的获利值
+      if(OrderProfit()>StopLoss*2 && OrderType()==0)
+      {
+         OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()+Point*StopLoss*0.5,OrderTakeProfit(),0);
+      }
+       if(OrderProfit()>StopLoss*2 && OrderType()==1)
+      {
+         OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()-Point*StopLoss*0.5,OrderTakeProfit(),0);
+      }
+       
+       return(0);        
+  }
+  
+//+------------------------------------------------------------------+
+//| Timer function                                                   |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+//---
+   
+  }
+//+------------------------------------------------------------------+
+//| ChartEvent function                                              |
+//+------------------------------------------------------------------+
+void OnChartEvent(const int id,
+                  const long &lparam,
+                  const double &dparam,
+                  const string &sparam)
+  {
+//---
+   
+  }
+//+------------------------------------------------------------------+
+/*
+函数：优化保证金，确定开仓量，进行风险控制
+      根据风险值RistValue计算开仓量
+      如果出现亏损单，则下一单开仓量减半
+      AccountBalance返回房钱账户的余额值
+      MarketInfo返回有关“市场报价”窗口中列出的证券的各种数据。
+      OrdersHistoryTotal返回加载到终端的帐户历史记录中已关闭订单的数量
+*/
+double LotsOptimized(double RistValue)
+{
+   double iLots=NormalizeDouble((AccountBalance()*RistValue/100)/MarketInfo(Symbol(),MODE_MARGINREQUIRED),2);//最大可开仓手数
+   OrderSelect(OrdersHistoryTotal()-1,SELECT_BY_POS,MODE_HISTORY);
+   if(OrderProfit()<0)iLots=iLots/2;
+   if(iLots<0.01){iLots=0;Print("保证金金额不足！");}
+   return(iLots);
+}
+
+/*
+   函数：返回市场信息
+         获取技术指标参数，通过比对，返回市场信息
+         Buy-买入信号，Sell卖出信号，Rise-涨势行情，Fall跌势行情
+         UpCross向上翻转，DownCross向下翻转，翻转信号为平仓信号
+         NormalizeDouble将浮点数舍入到指定的精度
+         iAlligator鳄鱼三线8，5，3
+*/
+
+string ReturnMarketInformation()
+{
+   string MktInfo = "N/A";
+   //读取指标数值
+   //当前柱子的值
+   Alligator_jaw=NormalizeDouble(iAlligator("EURUSD",30,8,0,5,0,3,0,MODE_EMA,PRICE_WEIGHTED,MODE_GATORJAW,0),4); 
+   Alligator_teeth=NormalizeDouble(iAlligator("EURUSD",30,8,0,5,0,3,0,MODE_EMA,PRICE_WEIGHTED,MODE_GATORTEETH,0),4); 
+   Alligator_lips=NormalizeDouble(iAlligator("EURUSD",30,8,0,5,0,3,0,MODE_EMA,PRICE_WEIGHTED,MODE_GATORLIPS,0),4); 
+   //当前一个柱子的值
+   double Alligator_jaw_1=NormalizeDouble(iAlligator("EURUSD",30,8,0,5,0,3,0,MODE_EMA,PRICE_WEIGHTED,MODE_GATORJAW,1),4); 
+   double Alligator_teeth_1=NormalizeDouble(iAlligator("EURUSD",30,8,0,5,0,3,0,MODE_EMA,PRICE_WEIGHTED,MODE_GATORTEETH,1),4); 
+   double Alligator_lips_1=NormalizeDouble(iAlligator("EURUSD",30,8,0,5,0,3,0,MODE_EMA,PRICE_WEIGHTED,MODE_GATORLIPS,1),4); 
+   
+   Force3=NormalizeDouble(iForce("EURUSD",30,4,MODE_EMA,PRICE_WEIGHTED,0),4); 
+   //指标分析，返回市场信息 || Force3<-Filter  Force3>Filter ||  
+   if (Alligator_lips>Alligator_teeth && Alligator_lips_1<=Alligator_teeth_1)MktInfo="UpCross";
+   if (Alligator_lips<Alligator_teeth && Alligator_lips_1>=Alligator_teeth_1)MktInfo="DownCross";
+   if (Alligator_lips>Alligator_teeth && Alligator_teeth>Alligator_jaw)MktInfo="Rise";
+   if (Alligator_lips<Alligator_teeth && Alligator_teeth<Alligator_jaw)MktInfo="Fall";
+   if (Force3>Filter && MktInfo=="Rise")MktInfo="Buy";
+   if (Force3<-Filter && MktInfo=="Fall")MktInfo="Sell";
+   return(MktInfo);
+}
+
+/*
+函数：在屏幕上显示标签
+参数说明： LableName：标签名称； LableDoc：文本内容； LableX：标签 X 位置； LableY：标
+签 Y 位置； DocSize：文本字号； DocStyle：文本字体； DocColor：文本颜色
+ ObjectCreate该函数在指定图表的指定图表子窗口中创建具有指定名称，类型和初始坐标的对象
+  ObjectSet更改指定对象属性的值。
+ ObjectSetText更改对象描述。
+ 
+*/
+void SetLable(string LableName,string LableDoc,int LableX,int LableY,
+int DocSize,string DocStyle,color DocColor)
+ {
+   ObjectCreate(LableName, OBJ_LABEL, 0, 0, 0);
+   ObjectSetText(LableName,LableDoc,DocSize,DocStyle,DocColor);
+   ObjectSet(LableName, OBJPROP_XDISTANCE, LableX);
+   ObjectSet(LableName, OBJPROP_YDISTANCE, LableY);
+ }   
