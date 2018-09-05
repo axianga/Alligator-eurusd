@@ -1,0 +1,76 @@
+#Day 2018.9.5  By axianga  #
+OnStart()
+处理脚本事件中是唯一函数，执行一次性操作，没有其他时间发送到脚本，start事件未传递给EA和自定义指标。
+
+OnInit()
+在指标和EA中调用该函数，初始化程序。
+
+OnDeinit()
+在指标和EA中调用该函数，取消正在运行的程序。与OnInit函数配套使用。
+
+OnTick()
+处理NewTick事件发生一处理新报价是，在EA中调用该函数。
+
+OnCalculate()
+当Calculate事件发生以处理价格数据变化时，在指标中调用改函数时，有两种功能类型，其中只有一个可以在一个指标中使用。
+
+OnTimer
+在终端以固定时间间隔生成的Timer事件期间在EA中调用该函数。
+
+OnTrade()
+当Trade事件发生时，在EA中调用该函数，该功能用于处理订单，头寸和交易清单的变化。
+
+OnTrade Transaction()
+当TradeTransaction事件发生时，在EA中调用该函数。该函数用于处理交易请求执行结果。
+
+OnBookEvent()
+当BookEvent事件发生时，在指示符和EA中调用该函数。它用于处理市场深度变化。
+
+OnChartEvent()
+当ChartEvent事件发生时，在指标和EA中调用该函数。该函数用于处理用户或程序所做的图表更改。
+
+OnTester()
+当发生Tester事件以在测试后执行必要的操作时，将在Expert Advisors中调用该函数。
+
+OnTesterInit()
+当TesterInit事件发生时，在EA中调用该函数，以便在策略测试器中进行优化之前执行必要的操作。有两种功能类型。
+
+OntesterDeinit
+EA优化后发生TesterDeinit事件时，在EA中调用该函数。
+
+OntesterPass()
+当EA优化期间处理新数据帧时，甚至出现TesterPass时，在EA中调用该函数。
+
+预定义函数开头
+Account  	账户
+Array    	数组
+Chart    	图表
+Copy	 	复制
+Cry	 	哭泣	
+Day	 	天
+Event		事件
+File		文件	
+Floder		文件夹
+Get	 	获得
+Global	 	全球的 
+I~~	 	我的
+Indicator	指标
+Math		数学
+MQL		数据库
+Obj		对象
+Order		命令
+Period		时期
+Refer		涉及	
+Reset		重置
+Send		发送
+Series		系列
+Set		设置
+Short		短的
+Signal		单独
+String		字符串
+Symbol		特征
+Terminal	终端
+Tester		时期
+Text		文本
+Time		时间
+Window		窗户
